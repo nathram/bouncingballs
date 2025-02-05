@@ -1,211 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elastic Ball Simulator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      padding: 20px;
-    }
-    canvas {
-      border: 2px solid black;
-      margin-bottom: 20px;
-      background-color: #f0f0f0;
-    }
-    .controls {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .control-group {
-      margin: 10px;
-    }
-    label {
-      margin-right: 10px;
-    }
-    button {
-      padding: 10px;
-      margin-top: 10px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Balls Simulation</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        canvas { background: #eee; display: block; margin: auto; border: 2px solid black; }
+        .controls { margin-top: 10px; }
+    </style>
 </head>
 <body>
-
-  <canvas id="canvas" width="600" height="400"></canvas>
-  <div class="controls">
-    <div class="control-group">
-      <label for="timeStep">Time Step:</label>
-      <input type="range" id="timeStep" min="1" max="100" value="10">
-      <span id="timeStepValue">10</span>
+    <h1>Bouncing Balls Simulation</h1>
+    <canvas id="canvas"></canvas>
+    <div class="controls">
+        <label>Time Step: <input type="range" id="timeStep" min="0.5" max="5" step="0.1" value="1"></label>
+        <label>Gravity: <input type="range" id="gravity" min="0" max="1" step="0.01" value="0.1"></label>
+        <label>Elasticity: <input type="range" id="elasticity" min="0" max="1" step="0.01" value="0.9"></label>
     </div>
-    <div class="control-group">
-      <label for="gravity">Gravity:</label>
-      <input type="range" id="gravity" min="0" max="1" step="0.01" value="0.1">
-      <span id="gravityValue">0.1</span>
-    </div>
-    <div class="control-group">
-      <label for="elasticity">Elasticity:</label>
-      <input type="range" id="elasticity" min="0" max="1" step="0.01" value="0.9">
-      <span id="elasticityValue">0.9</span>
-    </div>
-    <button id="addBall">Add Ball</button>
-  </div>
+    
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 600;
+        canvas.height = 400;
+        
+        let balls = [];
+        const timeStepSlider = document.getElementById("timeStep");
+        const gravitySlider = document.getElementById("gravity");
+        const elasticitySlider = document.getElementById("elasticity");
 
-  <script>
-    // Initialize canvas and context
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+        class Ball {
+            constructor(x, y, radius = 10) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+            }
+            update() {
+                let dt = parseFloat(timeStepSlider.value);
+                let gravity = parseFloat(gravitySlider.value);
+                let elasticity = parseFloat(elasticitySlider.value);
+                
+                this.vy += gravity * dt;
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
 
-    // Constants for the simulation
-    const GRAVITY = 0.1; // default gravity
-    const ELASTICITY = 0.9; // default elasticity
-    const BALL_RADIUS = 15;
-    let timeStep = 10;
-
-    let balls = [];
-
-    // Update the time step, gravity, and elasticity values
-    document.getElementById("timeStep").addEventListener("input", (e) => {
-      timeStep = e.target.value;
-      document.getElementById("timeStepValue").textContent = timeStep;
-    });
-
-    document.getElementById("gravity").addEventListener("input", (e) => {
-      gravity = e.target.value;
-      document.getElementById("gravityValue").textContent = gravity;
-    });
-
-    document.getElementById("elasticity").addEventListener("input", (e) => {
-      elasticity = e.target.value;
-      document.getElementById("elasticityValue").textContent = elasticity;
-    });
-
-    // Ball object
-    class Ball {
-      constructor(x, y, radius, vx, vy, color) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.vx = vx;
-        this.vy = vy;
-        this.color = color;
-      }
-
-      // Update position based on velocity and gravity
-      update() {
-        this.x += this.vx * timeStep;
-        this.y += this.vy * timeStep;
-
-        // Apply gravity
-        this.vy += gravity * timeStep;
-
-        // Collision with walls
-        if (this.x - this.radius <= 0 || this.x + this.radius >= canvas.width) {
-          this.vx *= -elasticity; // reverse and apply elasticity
+                // Bounce off walls
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx *= -elasticity;
+                    this.x = Math.max(this.radius, Math.min(this.x, canvas.width - this.radius));
+                }
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.vy *= -elasticity;
+                    this.y = Math.max(this.radius, Math.min(this.y, canvas.height - this.radius));
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = "blue";
+                ctx.fill();
+                ctx.stroke();
+            }
         }
-        if (this.y - this.radius <= 0 || this.y + this.radius >= canvas.height) {
-          this.vy *= -elasticity; // reverse and apply elasticity
+        
+        function checkCollisions() {
+            let elasticity = parseFloat(elasticitySlider.value);
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    let dx = balls[j].x - balls[i].x;
+                    let dy = balls[j].y - balls[i].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    let minDist = balls[i].radius + balls[j].radius;
+                    
+                    if (dist < minDist) {
+                        let angle = Math.atan2(dy, dx);
+                        let speed1 = Math.sqrt(balls[i].vx ** 2 + balls[i].vy ** 2);
+                        let speed2 = Math.sqrt(balls[j].vx ** 2 + balls[j].vy ** 2);
+                        let dir1 = Math.atan2(balls[i].vy, balls[i].vx);
+                        let dir2 = Math.atan2(balls[j].vy, balls[j].vx);
+                        
+                        let newVx1 = speed2 * Math.cos(dir2 - angle) * elasticity;
+                        let newVy1 = speed2 * Math.sin(dir2 - angle) * elasticity;
+                        let newVx2 = speed1 * Math.cos(dir1 - angle) * elasticity;
+                        let newVy2 = speed1 * Math.sin(dir1 - angle) * elasticity;
+                        
+                        balls[i].vx = newVx1;
+                        balls[i].vy = newVy1;
+                        balls[j].vx = newVx2;
+                        balls[j].vy = newVy2;
+                        
+                        let overlap = minDist - dist;
+                        let adjustX = (overlap / 2) * Math.cos(angle);
+                        let adjustY = (overlap / 2) * Math.sin(angle);
+                        balls[i].x -= adjustX;
+                        balls[i].y -= adjustY;
+                        balls[j].x += adjustX;
+                        balls[j].y += adjustY;
+                    }
+                }
+            }
         }
-      }
-
-      // Draw the ball
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.closePath();
-      }
-
-      // Collision with other balls
-      checkCollision(otherBall) {
-        const dx = otherBall.x - this.x;
-        const dy = otherBall.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < this.radius + otherBall.radius) {
-          // Simple elastic collision
-          const angle = Math.atan2(dy, dx);
-          const sine = Math.sin(angle);
-          const cosine = Math.cos(angle);
-
-          // Rotate ball positions
-          let x1 = 0;
-          let y1 = 0;
-          let x2 = dx * cosine + dy * sine;
-          let y2 = dy * cosine - dx * sine;
-
-          // Rotate velocities
-          let vx1 = this.vx * cosine + this.vy * sine;
-          let vy1 = this.vy * cosine - this.vx * sine;
-          let vx2 = otherBall.vx * cosine + otherBall.vy * sine;
-          let vy2 = otherBall.vy * cosine - otherBall.vx * sine;
-
-          // Apply 1D elastic collision equations
-          let v1 = ((this.radius - otherBall.radius) * vx1 + 2 * otherBall.radius * vx2) / (this.radius + otherBall.radius);
-          let v2 = ((otherBall.radius - this.radius) * vx2 + 2 * this.radius * vx1) / (this.radius + otherBall.radius);
-
-          // Update velocities after collision
-          vx1 = v1;
-          vx2 = v2;
-
-          // Rotate back velocities
-          this.vx = vx1 * cosine - vy1 * sine;
-          this.vy = vy1 * cosine + vx1 * sine;
-          otherBall.vx = vx2 * cosine - vy2 * sine;
-          otherBall.vy = vy2 * cosine + vx2 * sine;
-
-          // Move balls apart to prevent overlap
-          const overlap = this.radius + otherBall.radius - distance;
-          this.x -= overlap * (this.x - otherBall.x) / distance;
-          this.y -= overlap * (this.y - otherBall.y) / distance;
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            balls.forEach(ball => ball.update());
+            checkCollisions();
+            balls.forEach(ball => ball.draw());
+            requestAnimationFrame(animate);
         }
-      }
-    }
-
-    // Add a new ball with random velocity
-    document.getElementById("addBall").addEventListener("click", () => {
-      const x = Math.random() * (canvas.width - BALL_RADIUS * 2) + BALL_RADIUS;
-      const y = Math.random() * (canvas.height - BALL_RADIUS * 2) + BALL_RADIUS;
-      const vx = (Math.random() - 0.5) * 2; // random velocity between -1 and 1
-      const vy = (Math.random() - 0.5) * 2;
-      const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-      const ball = new Ball(x, y, BALL_RADIUS, vx, vy, color);
-      balls.push(ball);
-    });
-
-    // Main animation loop
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-
-      balls.forEach((ball, index) => {
-        ball.update(); // Update ball position and velocity
-        balls.slice(index + 1).forEach((otherBall) => {
-          ball.checkCollision(otherBall); // Check for collisions with other balls
+        
+        canvas.addEventListener("click", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            balls.push(new Ball(x, y));
         });
-        ball.draw(); // Draw the ball
-      });
-
-      requestAnimationFrame(animate); // Call animate again for the next frame
-    }
-
-    // Start the animation
-    animate();
-  </script>
-
+        
+        animate();
+    </script>
 </body>
 </html>
